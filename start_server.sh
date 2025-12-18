@@ -7,7 +7,7 @@ SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 cd "$SCRIPT_DIR"
 
 # Устанавливаем переменную окружения
-export DISCORD_CLIENT_ID="1450951913175519366"
+export DISCORD_CLIENT_ID="Application ID, который вы скопировали до этого (заменить все в кавычках)"
 
 # Проверяем, не запущен ли уже сервер
 if lsof -Pi :8080 -sTCP:LISTEN -t >/dev/null 2>&1 ; then

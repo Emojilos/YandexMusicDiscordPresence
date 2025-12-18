@@ -3,6 +3,9 @@ from pypresence import Presence
 import os
 import json
 import requests
+from dotenv import load_dotenv
+
+load_dotenv()
 
 class YandexMusicDiscord:
     def __init__(self, client_id: str):

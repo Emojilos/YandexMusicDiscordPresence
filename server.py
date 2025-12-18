@@ -5,6 +5,9 @@ from http.server import HTTPServer, BaseHTTPRequestHandler
 import json
 import threading
 import sys
+from dotenv import load_dotenv
+
+load_dotenv()
 
 class TrackHandler(BaseHTTPRequestHandler):
     current_track = None
@@ -90,11 +93,9 @@ class TrackHandler(BaseHTTPRequestHandler):
                             }
                             
                             cover = data.get('cover')
-                            print(f"📦 Received cover: {cover}")
                             if cover:
                                 presence_data['large_image'] = cover
                                 presence_data['large_text'] = data.get('album', '') or title
-                                print(f"🖼️  Sending cover to Discord: {cover}")
                             
                             TrackHandler.rpc.update(**presence_data)
                             print(f"✅ Трек обновлен: {details} - {artist}")

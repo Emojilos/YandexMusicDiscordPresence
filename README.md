@@ -1,5 +1,7 @@
 # Yandex Music Discord Rich Presence
 
+Кросс-платформенное приложение для отображения текущего трека из Яндекс.Музыки в Discord Rich Presence.
+
 ## Установка
 
 ```bash
@@ -8,110 +10,98 @@ pip install -r requirements.txt
 
 ## Настройка
 
-1. Создайте Discord Application:
-   - Перейдите на https://discord.com/developers/applications
-   - Нажмите "New Application"
-   - Введите название (например, "Yandex Music")
-   - Нажмите "Create"
-   - В разделе "General Information" найдите "Application ID"
-   - Скопируйте Application ID (это и есть Client ID)
+### 1. Создайте Discord Application
 
-2. Установите переменную окружения:
+- Перейдите на https://discord.com/developers/applications
+- Нажмите "New Application"
+- Введите название (например, "Yandex Music")
+- Нажмите "Create"
+- В разделе "General Information" найдите "Application ID"
+- Скопируйте Application ID (это и есть Client ID)
 
-**Вариант 1: Постоянно (рекомендуется)**
-Добавьте в файл `~/.zshrc`:
-```bash
-export DISCORD_CLIENT_ID="1450951913175519366"
+### 2. Настройте переменную окружения
+
+**Вариант 1: Файл .env (рекомендуется для всех платформ)**
+
+Создайте файл `.env` в корне проекта:
+```
+DISCORD_CLIENT_ID=ваш_application_id
 ```
 
-Откройте файл:
-```bash
-nano ~/.zshrc
+**Вариант 2: Переменная окружения**
+
+**Windows (PowerShell):**
+```powershell
+$env:DISCORD_CLIENT_ID="ваш_application_id"
 ```
 
-Добавьте строку в конец файла, сохраните (Ctrl+O, Enter, Ctrl+X) и выполните:
+**Windows (CMD):**
+```cmd
+set DISCORD_CLIENT_ID=ваш_application_id
+```
+
+**Linux/macOS:**
+```bash
+export DISCORD_CLIENT_ID="ваш_application_id"
+```
+
+Для постоянной установки на macOS/Linux добавьте в `~/.zshrc` или `~/.bashrc`:
+```bash
+export DISCORD_CLIENT_ID="ваш_application_id"
+```
+
+Затем выполните:
 ```bash
 source ~/.zshrc
 ```
 
-**Вариант 2: Временно (только для текущей сессии терминала)**
-```bash
-export DISCORD_CLIENT_ID="1450951913175519366"
-```
-⚠️ Эта переменная исчезнет после закрытия терминала
+### 3. Установите расширение браузера
 
-3. Получите cookies из браузера:
-   - Откройте https://music.yandex.ru в браузере
-   - Войдите в аккаунт
-   - Откройте DevTools (F12 или Cmd+Option+I на Mac)
-   - Перейдите во вкладку "Application" (или "Хранилище")
-   - В левом меню выберите "Cookies" → `https://music.yandex.ru`
-   - Найдите cookies `Session_id` и `yandexuid`
-   - Скопируйте их значения
-   - Создайте файл `~/.yandex_music_cookies.json` со следующим содержимым:
-   ```json
-   {
-     "Session_id": "ваш_session_id",
-     "yandexuid": "ваш_yandexuid"
-   }
-   ```
+- Откройте Chrome/Edge
+- Перейдите на `chrome://extensions/` (или `edge://extensions/`)
+- Включите "Режим разработчика" (Developer mode)
+- Нажмите "Загрузить распакованное расширение" (Load unpacked)
+- Выберите папку `extension` из этого проекта
 
 ## Запуск
 
-**Важно:** Сервер должен быть запущен постоянно, пока вы хотите видеть статус в Discord.
+**Важно:** Убедитесь, что Discord запущен перед запуском сервера.
 
-### Способ 1: Использование start_server.sh (рекомендуется)
+### Кросс-платформенный запуск (рекомендуется)
 
-Просто запустите скрипт:
 ```bash
-./start_server.sh
+python launch.py
+```
+
+или
+
+```bash
+python3 launch.py
 ```
 
 Скрипт автоматически:
-- Установит переменную окружения `DISCORD_CLIENT_ID`
-- Проверит, не запущен ли уже сервер
+- Проверит наличие `DISCORD_CLIENT_ID`
+- Проверит, не занят ли порт 8080
+- Установит зависимости (если нужно)
 - Запустит сервер
 
-**Важно:** Если вы добавили `DISCORD_CLIENT_ID` в `~/.zshrc`, можно использовать `./launch.sh` вместо этого скрипта.
+### Альтернативный запуск
 
-### Способ 2: Прямой запуск
-
+**Linux/macOS:**
 ```bash
-python3 server.py
-```
-Вы должны увидеть сообщение "Server started on http://localhost:8080"
-
-### Автозапуск сервера (опционально)
-
-Чтобы сервер запускался автоматически, добавьте алиас в файл `~/.zshrc`:
-
-1. Откройте файл в редакторе:
-```bash
-nano ~/.zshrc
-```
-   Или используйте любой другой редактор (VS Code, TextEdit и т.д.)
-
-2. Добавьте в конец файла:
-```bash
-# Yandex Music Discord RPC
-alias yandex-rpc='cd /Users/emoji/Documents/school/yandexextencion && python3 server.py &'
+./launch.sh
 ```
 
-3. Сохраните файл и перезагрузите конфигурацию:
-```bash
-source ~/.zshrc
+**Windows:**
+```cmd
+python server.py
 ```
 
-Теперь вы можете запускать сервер командой `yandex-rpc` из любого места.
+### Использование
 
-2. Установите расширение браузера:
-   - Откройте Chrome/Edge
-   - Перейдите на `chrome://extensions/` (или `edge://extensions/`)
-   - Включите "Режим разработчика" (Developer mode)
-   - Нажмите "Загрузить распакованное расширение" (Load unpacked)
-   - Выберите папку `extension` из этого проекта
-
-3. Откройте https://music.yandex.ru и начните воспроизведение музыки
+1. Запустите сервер (см. выше)
+2. Откройте https://music.yandex.ru
+3. Начните воспроизведение музыки
 
 Расширение будет автоматически отправлять информацию о текущем треке на локальный сервер (localhost:8080), который обновит ваш статус в Discord.
 
@@ -142,14 +132,22 @@ python3 test_discord.py
 **Шаг 3: Проверьте сервер**
 
 1. **Проверьте статус сервера:**
+   
+   **Windows (PowerShell):**
+   ```powershell
+   Invoke-WebRequest http://localhost:8080
+   ```
+   
+   **Linux/macOS:**
    ```bash
    curl http://localhost:8080
    ```
+   
    Должен вернуться JSON с информацией о текущем треке
 
 2. **Проверьте логи сервера:**
    - При запуске должно быть: "✅ Успешно подключено к Discord!"
-   - При обновлении трека должно быть: "✅ Discord обновлен: [название] - [исполнитель]"
+   - При обновлении трека должно быть: "✅ Трек обновлен: [название] - [исполнитель]"
 
 **Шаг 4: Проверьте расширение браузера**
 
@@ -161,7 +159,17 @@ python3 test_discord.py
 
 1. Остановите сервер (Ctrl+C в терминале)
 2. Убедитесь, что Discord запущен
-3. Запустите сервер снова: `./launch.sh`
+3. Запустите сервер снова: `python launch.py`
 4. Обновите страницу music.yandex.ru
 
-# YandexMusicDiscordPresence
+## Поддерживаемые платформы
+
+- ✅ Windows 10/11
+- ✅ macOS
+- ✅ Linux
+
+## Требования
+
+- Python 3.7+
+- Discord Desktop (не веб-версия)
+- Chrome/Edge браузер

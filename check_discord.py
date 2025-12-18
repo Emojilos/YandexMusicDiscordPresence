@@ -8,7 +8,7 @@ from pypresence import Presence
 CLIENT_ID = os.getenv('DISCORD_CLIENT_ID', '')
 if not CLIENT_ID:
     print("❌ Ошибка: DISCORD_CLIENT_ID не установлен")
-    print("Установите: export DISCORD_CLIENT_ID=\"1450951913175519366\"")
+    print("Установите: export DISCORD_CLIENT_ID=\"Application ID, который вы скопировали до этого (заменить все в кавычках)\"")
     exit(1)
 
 print("="*60)
