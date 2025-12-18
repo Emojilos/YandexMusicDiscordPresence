@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <style>
+        body {
+            width: 300px;
+            padding: 15px;
+            font-family: Arial, sans-serif;
+        }
+        .status {
+            padding: 10px;
+            background: #f0f0f0;
+            border-radius: 5px;
+            margin-bottom: 10px;
+        }
+        input {
+            width: 100%;
+            padding: 5px;
+            margin: 5px 0;
+        }
+        button {
+            width: 100%;
+            padding: 8px;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div class="status" id="status">Checking connection...</div>
+    <input type="text" id="serverUrl" placeholder="Server URL (default: http://localhost:8080)" value="http://localhost:8080">
+    <button id="saveBtn">Save</button>
+    <script src="popup.js"></script>
+</body>
+</html>
+
