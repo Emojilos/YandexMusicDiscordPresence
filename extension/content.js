@@ -4,6 +4,8 @@ let observer = null;
 let noTrackCount = 0;
 const CLEAR_THRESHOLD = 5;
 
+console.log('[YMD] injected on', location.hostname);
+
 
 function findTrackInWindow() {
     try {
@@ -42,39 +44,89 @@ function findTrackInWindow() {
     return null;
 }
 
-function isPlayerPlaying() {
-    const playPauseButtons = document.querySelectorAll('button, [role="button"]');
-    let hasPauseButton = false;
-    
-    for (const btn of playPauseButtons) {
-        const rect = btn.getBoundingClientRect();
-        const ariaLabel = btn.getAttribute('aria-label') || '';
-        const className = btn.className || '';
-        const text = btn.textContent || '';
-        
-        if (rect.bottom > window.innerHeight - 200 && 
-            rect.width > 0 && rect.height > 0 &&
-            (ariaLabel.toLowerCase().includes('pause') || 
-             className.includes('pause') ||
-             className.includes('Pause') ||
-             text.includes('⏸') ||
-             text.includes('||'))) {
-            hasPauseButton = true;
-            break;
-        }
+function isVisible(el) {
+    if (!el) return false;
+    const rect = el.getBoundingClientRect();
+    if (rect.width === 0 || rect.height === 0) return false;
+    const style = window.getComputedStyle(el);
+    return style.visibility !== 'hidden' && style.display !== 'none';
+}
+
+function isPlaying() {
+    const audios = Array.from(document.querySelectorAll('audio'));
+    if (audios.length === 0) {
+        return true;
     }
-    
-    if (!hasPauseButton) {
-        const playerBarCheck = document.querySelector('[class*="PlayerBar"], footer, [class*="Footer"]');
-        if (playerBarCheck) {
-            const rect = playerBarCheck.getBoundingClientRect();
-            if (rect.bottom > window.innerHeight - 100) {
-                return true;
+    return audios.some(a => !a.paused);
+}
+
+function getPlayerBar() {
+    const selectors = [
+        '[class*="PlayerBar"]',
+        'footer',
+        '[class*="Footer"]',
+        '[data-test-id*="player"]',
+        '[data-test-id*="Player"]'
+    ];
+    for (const sel of selectors) {
+        for (const el of document.querySelectorAll(sel)) {
+            if (isVisible(el) && el.querySelector('a[href*="/track/"]')) {
+                return el;
             }
         }
     }
-    
-    return hasPauseButton;
+
+    const trackLinks = document.querySelectorAll('a[href*="/track/"]');
+    for (const link of trackLinks) {
+        if (!isVisible(link)) continue;
+        const bar = link.closest('footer, [class*="PlayerBar"], [class*="player"]');
+        if (bar && isVisible(bar) && bar.querySelector('a[href*="/artist/"]')) {
+            return bar;
+        }
+    }
+    return null;
+}
+
+function getTrackFromPlayerBar(bar) {
+    let titleEl = null;
+    for (const link of bar.querySelectorAll('a[href*="/track/"]')) {
+        if (!isVisible(link)) continue;
+        const text = (link.textContent || '').trim();
+        const titleAttr = (link.getAttribute('title') || '').trim();
+        if (text || titleAttr) {
+            titleEl = link;
+            break;
+        }
+    }
+    if (!titleEl) return null;
+
+    const title = (titleEl.getAttribute('title') || titleEl.textContent || '').trim();
+    if (!title) return null;
+
+    const artists = [];
+    for (const el of bar.querySelectorAll('a[href*="/artist/"]')) {
+        if (!isVisible(el)) continue;
+        const name = (el.getAttribute('title') || el.textContent || '').trim();
+        if (name && !artists.includes(name)) {
+            artists.push(name);
+        }
+    }
+
+    let cover = null;
+    for (const img of bar.querySelectorAll('img')) {
+        const raw = img.currentSrc || img.src || img.getAttribute('srcset') || '';
+        if (raw && raw.includes('avatars.yandex.net')) {
+            cover = raw.replace(/\/\d+x\d+$/, '/200x200');
+            break;
+        }
+    }
+
+    return {
+        title,
+        artist: artists.length ? artists.join(', ') : 'Unknown Artist',
+        album: '',
+        cover
+    };
 }
 
 function getCurrentTrack() {
@@ -82,132 +134,17 @@ function getCurrentTrack() {
     if (windowTrack) {
         return windowTrack;
     }
-    
+
     try {
-        const playerBarSelectors = [
-            '[class*="PlayerBar"]',
-            'footer',
-            '[class*="Footer"]'
-        ];
-        
-        let playerBar = null;
-        for (const sel of playerBarSelectors) {
-            const candidate = document.querySelector(sel);
-            if (candidate) {
-                const rect = candidate.getBoundingClientRect();
-                if (rect.bottom > window.innerHeight - 80 && rect.top < window.innerHeight) {
-                    playerBar = candidate;
-                    break;
-                }
-            }
-        }
-        
-        if (!playerBar) {
-            return null;
-        }
-        
-        let cover = null;
-        const coverImg = document.querySelector('img[class*="PlayerBarDesktopWithBackgroundProgressBar_cover"], img[class*="PlayerBarMobile_cover"]');
-        if (coverImg) {
-            if (coverImg.src && coverImg.src.includes('avatars.yandex.net')) {
-                cover = coverImg.src.replace(/\/\d+x\d+$/, '/200x200');
-            } else if (coverImg.srcset) {
-                const srcset = coverImg.getAttribute('srcset');
-                if (srcset && srcset.includes('avatars.yandex.net')) {
-                    const urls = srcset.split(',').map(s => s.trim().split(' ')[0]);
-                    cover = urls.find(url => url.includes('200x200')) || urls[0];
-                }
-            }
-        }
-        
-        const titleSelectors = [
-            '[class*="Meta_title"]'
-        ];
-        
-        const artistSelectors = [
-            '[class*="Meta_artists"]'
-        ];
-        
-        let titleEl = null;
-        let artistEl = null;
-        
-        for (const sel of titleSelectors) {
-            const candidates = playerBar.querySelectorAll(sel);
-            for (const candidate of candidates) {
-                const text = candidate.textContent.trim();
-                const rect = candidate.getBoundingClientRect();
-                if (text.length > 0 && 
-                    rect.bottom > window.innerHeight - 80 && 
-                    rect.top < window.innerHeight &&
-                    rect.left < window.innerWidth * 0.6) {
-                    titleEl = candidate;
-                    break;
-                }
-            }
-            if (titleEl) break;
-        }
-        
-        for (const sel of artistSelectors) {
-            const candidates = playerBar.querySelectorAll(sel);
-            for (const candidate of candidates) {
-                const text = candidate.textContent.trim();
-                const rect = candidate.getBoundingClientRect();
-                if (text.length > 0 && 
-                    rect.bottom > window.innerHeight - 80 && 
-                    rect.top < window.innerHeight &&
-                    rect.left < window.innerWidth * 0.6) {
-                    artistEl = candidate;
-                    break;
-                }
-            }
-            if (artistEl) break;
-        }
-        
-        if (titleEl) {
-            const title = titleEl.textContent.trim();
-            let artist = '';
-            
-            if (artistEl) {
-                artist = artistEl.textContent.trim();
-            } else {
-                const parent = titleEl.closest('[class*="Meta"], [class*="PlayerBar"]');
-                if (parent) {
-                    const artistCandidates = parent.querySelectorAll('[class*="Meta_artists"], [class*="artists"]');
-                    for (const candidate of artistCandidates) {
-                        const text = candidate.textContent.trim();
-                        const rect = candidate.getBoundingClientRect();
-                        if (text.length > 0 && 
-                            text !== title &&
-                            rect.bottom > window.innerHeight - 80 &&
-                            rect.left < window.innerWidth * 0.6) {
-                            artist = text;
-                            break;
-                        }
-                    }
-                }
-            }
-            
-            if (title && title.length > 0 && 
-                title.length < 100 &&
-                !title.toLowerCase().includes('listen') &&
-                !title.toLowerCase().includes('favorite') &&
-                !title.toLowerCase().includes('mistake') &&
-                !title.toLowerCase().includes('1booth') &&
-                !title.toLowerCase().includes('player') &&
-                !title.toLowerCase().includes('slang') &&
-                !title.toLowerCase().includes('улыбка') &&
-                !title.toLowerCase().includes('aarne') &&
-                title !== lastTrack?.title) {
-                return {
-                    title,
-                    artist: artist || 'Unknown Artist',
-                    album: '',
-                    cover: cover
-                };
+        const bar = getPlayerBar();
+        if (bar) {
+            const track = getTrackFromPlayerBar(bar);
+            if (track) {
+                return track;
             }
         }
     } catch (e) {
-        console.error('Error getting track:', e);
+        console.error('[YMD] Error getting track:', e);
     }
     return null;
 }
@@ -215,27 +152,24 @@ function getCurrentTrack() {
 function sendTrackToServer(track) {
     const trackKey = normalizeTrackKey(track);
     if (!trackKey) return;
-    
+
     // Не отправляем, если это тот же трек, что уже был отправлен
     if (sendTrackToServer.lastSent === trackKey) {
         return; // Трек не изменился, не отправляем на сервер
     }
-    
+
     // Отмечаем, что этот трек уже отправлен
     sendTrackToServer.lastSent = trackKey;
-    
-    fetch(serverUrl, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(track)
-    }).then(() => {
-        // Успешно отправлено
-    }).catch(err => {
-        console.error('Error sending track:', err);
-        // При ошибке сбрасываем, чтобы можно было повторить
-        sendTrackToServer.lastSent = null;
+
+    chrome.runtime.sendMessage({
+        type: 'forward',
+        url: serverUrl,
+        payload: track
+    }, (response) => {
+        if (!response || !response.ok) {
+            // При ошибке сбрасываем, чтобы можно было повторить
+            sendTrackToServer.lastSent = null;
+        }
     });
 }
 
@@ -247,12 +181,12 @@ function normalizeTrackKey(track) {
 }
 
 function checkTrack() {
-    const track = getCurrentTrack();
+    const track = isPlaying() ? getCurrentTrack() : null;
     if (track) {
         noTrackCount = 0;
         const trackKey = normalizeTrackKey(track);
         const lastTrackKey = normalizeTrackKey(lastTrack);
-        
+
         if (trackKey !== lastTrackKey && trackKey) {
             lastTrack = track;
             console.log('Track:', track.title, '-', track.artist, 'Cover:', track.cover);
@@ -266,27 +200,11 @@ function checkTrack() {
                 lastTrack = null;
                 sendTrackToServer.lastSent = null;
                 noTrackCount = 0;
-                fetch(serverUrl, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({ clear: true })
-                }).catch(() => {});
-            }
-        }
-    }
-    
-    if (!track) {
-        const player = document.querySelector('[class*="player"], [class*="Player"], [data-bem*="player"]');
-        if (player) {
-            const allLinks = player.querySelectorAll('a');
-            const trackLinks = Array.from(allLinks).filter(a => {
-                const href = a.getAttribute('href') || '';
-                return href.includes('/track/');
-            });
-            
-            if (trackLinks.length > 0) {
+                chrome.runtime.sendMessage({
+                    type: 'forward',
+                    url: serverUrl,
+                    payload: { clear: true }
+                });
             }
         }
     }
@@ -300,7 +218,7 @@ chrome.storage.local.get(['serverUrl'], (result) => {
 
 function startObserver() {
     if (observer) return;
-    
+
     let checkTimeout = null;
     observer = new MutationObserver(() => {
         // Debounce: проверяем трек не чаще раза в секунду
@@ -311,13 +229,13 @@ function startObserver() {
             checkTrack();
         }, 1000);
     });
-    
+
     observer.observe(document.body, {
         childList: true,
         subtree: true,
         attributes: false
     });
-    
+
 }
 
 if (document.readyState === 'loading') {
@@ -331,6 +249,3 @@ if (document.readyState === 'loading') {
     setInterval(checkTrack, 1000);
     checkTrack();
 }
-
-
-

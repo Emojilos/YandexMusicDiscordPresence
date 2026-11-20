@@ -11,6 +11,24 @@
   "host_permissions": [
     "https://music.yandex.ru/*",
     "https://*.music.yandex.ru/*",
+    "https://music.yandex.com/*",
+    "https://*.music.yandex.com/*",
+    "https://music.yandex.by/*",
+    "https://*.music.yandex.by/*",
+    "https://music.yandex.kz/*",
+    "https://*.music.yandex.kz/*",
+    "https://music.yandex.uz/*",
+    "https://*.music.yandex.uz/*",
+    "https://music.yandex.com.tr/*",
+    "https://*.music.yandex.com.tr/*",
+    "https://music.yandex.am/*",
+    "https://*.music.yandex.am/*",
+    "https://music.yandex.az/*",
+    "https://*.music.yandex.az/*",
+    "https://music.yandex.kg/*",
+    "https://*.music.yandex.kg/*",
+    "https://music.yandex.ua/*",
+    "https://*.music.yandex.ua/*",
     "http://localhost/*"
   ],
   "content_scripts": [
@@ -18,13 +36,34 @@
       "matches": [
         "https://music.yandex.ru/*",
         "https://*.music.yandex.ru/*",
-        "http://music.yandex.ru/*"
+        "https://music.yandex.com/*",
+        "https://*.music.yandex.com/*",
+        "https://music.yandex.by/*",
+        "https://*.music.yandex.by/*",
+        "https://music.yandex.kz/*",
+        "https://*.music.yandex.kz/*",
+        "https://music.yandex.uz/*",
+        "https://*.music.yandex.uz/*",
+        "https://music.yandex.com.tr/*",
+        "https://*.music.yandex.com.tr/*",
+        "https://music.yandex.am/*",
+        "https://*.music.yandex.am/*",
+        "https://music.yandex.az/*",
+        "https://*.music.yandex.az/*",
+        "https://music.yandex.kg/*",
+        "https://*.music.yandex.kg/*",
+        "https://music.yandex.ua/*",
+        "https://*.music.yandex.ua/*"
       ],
       "js": ["content.js"],
       "run_at": "document_idle",
       "all_frames": false
     }
   ],
+  "background": {
+    "scripts": ["background.js"],
+    "service_worker": "background.js"
+  },
   "action": {
     "default_popup": "popup.html",
     "default_title": "Yandex Music Discord RPC"

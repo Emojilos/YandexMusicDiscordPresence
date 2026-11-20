@@ -2,3 +2,5 @@
 .yandex_music_cookies.json
 __pycache__/
 *.pyc
+
+venv/
